@@ -1,8 +1,10 @@
+from google.genai import types
 import os
 from prompts import system_prompt
 from dotenv import load_dotenv
 from google import genai
 import argparse
+from functions.call_function import available_functions
 from google.genai import types
 def main():
     # Load environment variables from .env file
@@ -30,11 +32,16 @@ def main():
     # Now we can access `args.user_prompt`
     response = client.models.generate_content(
             model='gemini-2.5-flash', contents=messages,
-            config=types.GenerateContentConfig(system_instruction=system_prompt),
-    )
+            config=types.GenerateContentConfig(
+    tools=[available_functions], system_instruction=system_prompt
+    ))
     p_token=response.usage_metadata.prompt_token_count
     r_token=response.usage_metadata.candidates_token_count
-    print(response.text)
+    if response.function_calls:
+        for function_call in response.function_calls:
+            print(f"Calling function: {function_call.name}({function_call.args})")
+    else:
+        print(response.text)
     if args.verbose:
         print(f'User prompt: "{args.user_prompt}"')
         print(f"Prompt tokens: {response.usage_metadata.prompt_token_count}")

@@ -1,4 +1,5 @@
 import os
+from prompts import system_prompt
 from dotenv import load_dotenv
 from google import genai
 import argparse
@@ -28,7 +29,8 @@ def main():
 
     # Now we can access `args.user_prompt`
     response = client.models.generate_content(
-            model='gemini-2.5-flash', contents=messages
+            model='gemini-2.5-flash', contents=messages,
+            config=types.GenerateContentConfig(system_instruction=system_prompt),
     )
     p_token=response.usage_metadata.prompt_token_count
     r_token=response.usage_metadata.candidates_token_count

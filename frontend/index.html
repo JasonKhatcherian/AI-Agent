@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>AI-AGENT</title>
+</head>
+
+<body>
+    <div class="container">
+        <div class="leftpanel">
+            <button class="newchat" type="button" onclick="createNewChat()">New Chat</button>
+            <h3>Recents
+            </h3>
+            <div class="history"></div>
+        </div>
+
+        <div class="chatbox">
+            <h1 class="title">AI Agent</h1>
+            <img id="click-image" src="images/dark_mode_24dp_75FB4C_FILL0_wght400_GRAD0_opsz24.png" alt="Darkmode Icon"
+                width="24" height="24"></img>
+            <div id="chat-history" class="chat-history"></div>
+            <div class="input-container">
+                <input class="search" type="text" placeholder="ask anything "
+                    onkeydown="if(event.key === 'Enter') saveData(event)">
+                <button class="sender" type="button" onclick="saveData(event)">Send</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+
+</html>

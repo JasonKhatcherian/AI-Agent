@@ -102,7 +102,7 @@ def call_function(function_call: types.FunctionCall, verbose: bool = False) -> t
         print(f" - Calling function: {function_name}")
 
     # IMPORTANT: inject working directory (as required by spec)
-    args["working_directory"] = "./calculator"
+    args["working_directory"] = "./aicreations"
 
     # call function from map
     function_result = function_map[function_name](**args)

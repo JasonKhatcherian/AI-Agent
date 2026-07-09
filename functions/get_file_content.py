@@ -13,15 +13,12 @@ def get_file_content(working_directory: str, file_path: str) -> str:
             os.path.join(working_dir_abs, file_path)
         )
 
-        # SECURITY CHECK
         if os.path.commonpath([working_dir_abs, target_path]) != working_dir_abs:
             return f'Error: Cannot read "{file_path}" as it is outside the permitted working directory'
 
-        # FILE CHECK
         if not os.path.isfile(target_path):
             return f'Error: File not found or is not a regular file: "{file_path}"'
 
-        # READ FILE
         with open(target_path, "r", encoding="utf-8") as f:
             content = f.read(config.MAX_CHARS)
 

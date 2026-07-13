@@ -12,14 +12,17 @@
     color: #2D3142;
 }
 
-img {
+#click-image {
     float: right;
     cursor: pointer;
     margin-top: -50px;
 }
-
-
-
+#temp-image{
+    float: right;
+    cursor: pointer;
+    margin-top: -50px;
+    margin-right:45px;
+}
 body {
     overflow: hidden;
 }
@@ -59,8 +62,6 @@ body {
     padding: 5px;
     height: 75vh;
     overflow-y: auto;
-
-
 }
 
 .message {
@@ -85,6 +86,7 @@ body {
 }
 
 .leftpanel {
+    height: 100vh;
     width: 150px;
     display: flex;
     flex-direction: column;
@@ -93,6 +95,13 @@ body {
     background-color: #F9F9FB;
     color: #2D3142;
     border: 2px solid rgba(0, 0, 0, 0.12);
+    flex-shrink: 0;
+    transition: margin-left 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    overflow: hidden;
+}
+.container.panel-closed .leftpanel {
+    margin-left: -154px;
+    opacity: 0;
 }
 
 .newchat {
@@ -101,7 +110,10 @@ body {
     width: 100px;
     height: 50px;
 }
-
+.toggle-btn{
+    border-radius: 5px;
+    background: transparent;
+}
 
 
 .chatbox {
@@ -113,4 +125,8 @@ body {
     flex-direction: column;
     align-items: center;
     gap: 8px;
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 15px;
 }

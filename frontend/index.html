@@ -18,9 +18,15 @@
         </div>
 
         <div class="chatbox">
-            <h1 class="title">AI Agent</h1>
+            <button class="toggle-btn" onclick="togglePanel()">☰</button>
+            <h1 class="title" id="title-switch">AI Agent</h1>
             <img id="click-image" src="images/dark_mode_24dp_75FB4C_FILL0_wght400_GRAD0_opsz24.png" alt="Darkmode Icon"
                 width="24" height="24"></img>
+            <img id="temp-image" src="images/icons8-temporary-chat-50.png" style="display:block;" alt="tempChat Icon"
+                width="24" height="24"></img>
+            <p id="temptext" style="display: none;">
+            temp is on
+            </p>
             <div id="chat-history" class="chat-history"></div>
             <div class="input-container">
                 <input class="search" type="text" placeholder="ask anything "

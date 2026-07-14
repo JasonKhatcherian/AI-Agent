@@ -2,15 +2,15 @@ let sessions = JSON.parse(localStorage.getItem("chat_sessions")) || [];
 let currentSessionId = null;
 let active = false; 
 let storedValue = "";
+let counter=1;
 const image = document.getElementById('click-image');
 const tempChat = document.getElementById('temp-image');
 const historyElement = document.querySelector('.history');
-const temptext = document.getElementById('temp-text') 
 const title = document.querySelector('.title');
 const tglBtn=document.querySelector('.toggle-btn');
+const chatHistory = document.getElementById('chat-history');
 function updateTemp() {
     if (tempChat) {
-        const chatHistory = document.getElementById('chat-history');
         if ((chatHistory && chatHistory.children.length > 0) || currentSessionId) {
             tempChat.style.display = "none";
         } else {
@@ -27,40 +27,59 @@ if (tempChat) {
     tempChat.addEventListener('click', function() {
         if (active === false) {
             if (title) title.innerText = "Temporary Chat";
-            if (temptext) temptext.style.display = "block";
             active = true;
         } else {
-            if (title) title.innerText = "AI Agent";
-            if (temptext) temptext.style.display = "none";
+            if (title) title.innerText = "What’s on your mind today?";
+
             active = false;
         }
         updateTemp(); 
     });
 }
-
-if (image) {
-    image.addEventListener('click', function () {
-        if (document.body.style.backgroundColor === "rgb(255, 255, 255)") {
+const dropdownDarkModeBtn = document.getElementById('click-image-btn');
+if (dropdownDarkModeBtn) {
+    dropdownDarkModeBtn.addEventListener('click', function (event) {
+        event.stopPropagation();
+        const themeText = dropdownDarkModeBtn.querySelector('.theme-text');
+        if (counter % 2 != 0) {
             document.body.style.backgroundColor = "rgb(0, 0, 0)";
-            document.querySelector('.title').style.color = "rgb(18, 35, 72)";
-            document.querySelector('.search').style.backgroundColor = "rgb(0, 0, 0)";
+            document.querySelector('.title').style.color = "#3A3A3C";
+            
+            document.querySelector('.input-container').style.backgroundColor = "#3A3A3C";
+            document.querySelector('.input-container').style.borderColor = "#4A4A4C";
+
+            document.querySelector('.search').style.backgroundColor = "transparent";
             document.querySelector('.search').style.color = "#ffffff";
-            document.querySelector('.sender').style.backgroundColor = "#3A3A3C";
+            
+            document.querySelector('.sender').style.backgroundColor = "rgba(255, 255, 255, 0.15)";
+            document.querySelector('.sender svg').style.color = "#ffffff";
+            document.querySelector('.newchat').style.color = "#E3E6EB";
             document.querySelector('.toggle-btn').style.backgroundColor = "#3A3A3C";
-            document.querySelector('.newchat').style.backgroundColor = "#3A3A3C";
             document.querySelector('.leftpanel').style.backgroundColor = "#1E1F22";
             document.querySelector('.leftpanel').style.color = "#E3E6EB";
+            themeText.textContent = "Toggle Light Mode";
+            counter++;
         } else {
             document.body.style.backgroundColor = "rgb(255, 255, 255)";
             document.querySelector('.title').style.color = "rgb(0, 0, 0)";
-            document.querySelector('.search').style.backgroundColor = "rgb(255, 255, 255)";
+            
+            document.querySelector('.input-container').style.backgroundColor = "#f4f4f4";
+            document.querySelector('.input-container').style.borderColor = "#e3e3e3";
+
+            document.querySelector('.search').style.backgroundColor = "transparent";
             document.querySelector('.search').style.color = "rgb(0, 0, 0)";
-            document.querySelector('.sender').style.backgroundColor = "rgb(255, 255, 255)";
-            document.querySelector('.toggle-btn').style.backgroundColor = "rgb(255, 255, 255)";
+            
+            document.querySelector('.sender').style.backgroundColor = "#ffffff";
+            document.querySelector('.sender svg').style.color = "#000000";
+
+            document.querySelector('.toggle-btn').style.backgroundColor = "transparent";
             document.querySelector('.leftpanel').style.backgroundColor = "#F9F9FB";
             document.querySelector('.leftpanel').style.color = "#4A4A4A";
-            document.querySelector('.newchat').style.backgroundColor = "rgb(255, 255, 255)";
+            document.querySelector('.newchat').style.color = "#000000";
+            themeText.textContent = "Toggle Dark Mode";
+            counter++;
         }
+        document.getElementById("dropdown-menu").classList.remove("show");
     });
 }
 
@@ -70,8 +89,8 @@ function renderSidebar() {
     sessions.forEach(session => {
         const item = document.createElement('div');
         item.className = 'chat-log-item';
-        const shortTitle = session.title.split(' ').slice(0, 3).join(' ');
-        const hasMoreWords = session.title.split(' ').length > 3;
+        const shortTitle = session.title.split(' ').slice(0, 4).join(' ');
+        const hasMoreWords = session.title.split(' ').length > 4;
         item.textContent = hasMoreWords ? `${shortTitle}...` : shortTitle;
         item.style.cursor = 'pointer';
         item.onclick = () => loadSession(session.id);
@@ -84,11 +103,10 @@ async function saveData(event) {
         event.preventDefault();
     }
     const userInput = document.querySelector('.search');
-    const chatHistory = document.getElementById('chat-history');
     storedValue = userInput.value;
 
     if (storedValue.trim() === "") return;
-
+    if (title) title.innerText = "";
     if (!currentSessionId && !active) {
         currentSessionId = "session_" + Date.now();
         const newSession = {
@@ -117,6 +135,7 @@ async function saveData(event) {
     }
 
     userInput.value = "";
+    userInput.style.height = "auto";
     chatHistory.scrollTop = chatHistory.scrollHeight;
 
     const aiMessage = document.createElement('div');
@@ -163,10 +182,11 @@ async function saveData(event) {
 function loadSession(id) {
     currentSessionId = id;
     active = false; 
-    if (temptext) temptext.style.display = "none";
-    if (title) title.innerText = "AI Agent";
+    if (title) {
+        title.innerText = "";
+        title.style.display = "block"; 
+    }
     const session = sessions.find(s => s.id === id);
-    const chatHistory = document.getElementById('chat-history');
 
     chatHistory.innerHTML = '';
 
@@ -184,10 +204,11 @@ function loadSession(id) {
 }
 
 function createNewChat() {
+        title.style.display = "block";
+        title.innerText = "What’s on your mind today?";
+
     currentSessionId = null;
     active = false; 
-    if (title) title.innerText = "AI Agent";
-    if (temptext) temptext.style.display = "none";
     
     const historyContainer = document.getElementById("chat-history");
     if (historyContainer) {
@@ -204,3 +225,35 @@ function togglePanel() {
     container.classList.toggle('panel-closed');
 }
 renderSidebar();
+function toggleDropdown(event) {
+    event.stopPropagation();
+    document.getElementById("dropdown-menu").classList.toggle("show");
+}
+window.addEventListener('click', function(event) {
+    if (!event.target.matches('.menu-dots-btn')) {
+        const dropdown = document.getElementById("dropdown-menu");
+        if (dropdown && dropdown.classList.contains('show')) {
+            dropdown.classList.remove('show');
+        }
+    }
+});
+function handleDelete() {
+    if (chatHistory.children.length <= 0) return;
+    const check = confirm("Are you sure you want to delete this chat?");
+    if(!check){return;}
+    if (!currentSessionId) {
+        if (chatHistory) chatHistory.innerHTML = '';
+        updateTemp();
+        return;
+    }
+    sessions = sessions.filter(session => session.id !== currentSessionId);
+    localStorage.setItem("chat_sessions", JSON.stringify(sessions));
+    renderSidebar();
+    createNewChat();
+}
+const searchBox = document.querySelector(".search");
+function handleAutoGrow() {
+    searchBox.style.height = "auto";
+    searchBox.style.height = searchBox.scrollHeight + "px";
+}
+searchBox.addEventListener("input", handleAutoGrow);

@@ -11,10 +11,12 @@
 
 .title {
     text-align: center;
-    margin:auto;
+    margin:0 auto;
     margin-right: 40px;
     color: #2D3142;
     min-height: 1.2em;
+    padding-left: 110px;
+    padding-right: 110px;
 }
 #temp-image{
     float: right;
@@ -23,6 +25,7 @@
     margin-right:47px;
     border-radius: 8px;
     padding: 6px;
+    color: #000000;
 }
 #temp-image:hover{
     background-color: rgba(142, 142, 147, 0.2) !important;
@@ -34,7 +37,31 @@ body {
     font-weight: 400;
     font-style: normal;
     font-variation-settings: "wdth" 100;
+    background-color: rgb(255, 255, 255);
 }
+.title { color: rgb(0, 0, 0); }
+.input-container { background-color: #f4f4f4; border-color: #e3e3e3; }
+.search { background-color: transparent; color: rgb(0, 0, 0); }
+.sender { background-color: #ffffff; }
+.sender svg { color: #000000; }
+.toggle-btn { color: #000000; background-color: transparent; }
+.leftpanel { background-color: #F9F9FB; color: #4A4A4A; border-color: #E8E8EC; }
+.newchat { color: #000000; }
+#temp-image { color: #000000; }
+.menu-dots-btn { color: #000000; }
+body.dark-mode {
+    background-color: rgb(0, 0, 0);
+}
+body.dark-mode .title { color: #E3E6EB; }
+body.dark-mode .input-container { background-color: #3A3A3C; border-color: #4A4A4C; }
+body.dark-mode .search { color: #ffffff; }
+body.dark-mode .sender { background-color: rgba(255, 255, 255, 0.15); }
+body.dark-mode .sender svg { color: #ffffff; }
+body.dark-mode .newchat { color: #E3E6EB; }
+body.dark-mode .toggle-btn { background-color: #3A3A3C; color: #E3E6EB; }
+body.dark-mode .leftpanel { background-color: #1E1F22; color: #E3E6EB; border-color: #2F2F33; }
+body.dark-mode #temp-image { color: #E3E6EB; }
+body.dark-mode .menu-dots-btn { color: #E3E6EB; }
 #recent {
     float: left;
     width: calc(100% - 10px); 
@@ -42,16 +69,155 @@ body {
     box-sizing: border-box;
 }
 .chat-log-item {
+    position: relative; /* Allows precise placement of the child dropdown card */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
     box-sizing: border-box;
     width: calc(100% - 10px);
-    float:left;
+    float: left;
     padding: 10px 16px;
     font-size: 14px;
-    border-radius:12px;
+    border-radius: 12px;
     cursor: pointer;
+    transition: background-color 0.15s ease;
 }
-.chat-log-item:hover{
+.chat-log-item.active, .newchat.active {
+    background-color: rgba(27, 24, 184, 0.15);
+    font-weight: 700;
+}
+.chat-log-item:hover {
     background-color: rgba(142, 142, 147, 0.2);
+}
+
+/* Chat Title Text Span - Prevents title overflow or crashing into '•••' */
+.item-title-span {
+    flex-grow: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding-right: 24px; /* Leaves clear breathing space for the button */
+}
+
+/* Inline Edit Field Input styling */
+.item-rename-input {
+    flex-grow: 1;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.12);
+    border: 1.5px solid #007bff;
+    color: inherit;
+    font-size: 14px;
+    padding: 3px 6px;
+    border-radius: 6px;
+    outline: none;
+    box-sizing: border-box;
+}
+
+/* Sidebar '•••' Button - Revealed only on hovering over the chat row */
+.item-menu-dots-btn {
+    position: absolute;
+    right: 12px;
+    background: transparent;
+
+    border: none;
+    color: inherit;
+    font-size: 12px;
+    letter-spacing: 1px;
+    cursor: pointer;
+    padding: 4px 6px;
+    border-radius: 6px;
+    opacity: 0; /* hidden by default */
+    transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+.chat-log-item:hover .item-menu-dots-btn,
+.item-menu-dots-btn:focus {
+    opacity: 1;
+}
+
+.item-menu-dots-btn:hover {
+    background-color: rgba(142, 142, 147, 0.25);
+}
+
+/* The Floating Context Menu Card (Exactly matches reference image dimensions) */
+.item-dropdown {
+    position: absolute;
+    right: 8px;
+    top: 38px;
+    background-color: #2b2b2b; /* Dark card background */
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.4);
+    border-radius: 14px; /* Perfectly curves the menu edges */
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    z-index: 100;
+    width: 140px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Switches color values cleanly if your body changes to Light Mode */
+body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown {
+    background-color: #fcfcfd;
+    border: 1px solid #e3e3e3;
+    box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+/* Individual Dropdown Action Button inside Menu Card */
+.item-dropdown-btn {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-radius: 8px; /* Inner bounding curve */
+    text-align: left;
+    padding: 8px 12px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #f4f4f5; /* Off-white text matching photo */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Clean icon spacing */
+    transition: background-color 0.15s ease;
+}
+
+body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn {
+    color: #2D3142;
+}
+
+.item-dropdown-btn:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn:hover {
+    background-color: #f5f5f7;
+}
+
+.item-dropdown-btn svg {
+    flex-shrink: 0;
+    color: inherit;
+    opacity: 0.85;
+}
+
+/* Red Accent for delete option */
+.item-dropdown-btn.item-delete-btn {
+    color: #ff5c5c;
+}
+
+body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-delete-btn {
+    color: #df1b1b;
+}
+
+.item-dropdown-btn.item-delete-btn:hover {
+    background-color: rgba(255, 92, 92, 0.12);
+}
+
+body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-delete-btn:hover {
+    background-color: #fff2f2;
+}
+
+/* General Visibility Utility */
+.hidden {
+    display: none !important;
 }
 .input-container {
     display: flex;
@@ -66,7 +232,7 @@ body {
     border-radius: 24px;
     min-height: 48px;
     max-height: 120px;
-    padding: 8px 8px 8px 16px;
+    padding: 4px 8px 4px 16px;
     box-sizing: border-box;
     width: calc(100% - 40px);
     max-width: 850px;
@@ -84,11 +250,14 @@ body {
     font-size: 15px;
     line-height: 20px; 
     color: #2D3142;     
-    padding: 6px 0;
+    padding: 3px 0;
     resize: none;
+    height: 32px;
     max-height: 104px;
     overflow-y: auto;
     box-sizing: border-box;
+    field-sizing: content;
+    
 }
 
 .sender {
@@ -150,9 +319,9 @@ body {
     gap: 15px;
     background-color: #F9F9FB;
     color: #2D3142;
-    border: 2px solid rgba(0, 0, 0, 0.12);
+    border: 1px solid #E8E8EC;
     flex-shrink: 0;
-    transition: margin-left 0.3s ease-in-out, opacity 0.3s ease-in-out;
+    transition: margin-left 0.9s ease-in-out, opacity 0.3s ease-in-out;
     /*resize: horizontal;*/
     overflow: hidden;
 }
@@ -171,7 +340,6 @@ body {
     scrollbar-width: 15px;
 }
 .container.panel-closed .leftpanel {
-
     margin-left: -178px;
 }
 .newchat {
@@ -213,7 +381,7 @@ body {
     transform: translateY(20px);
     background: transparent !important;
     border: none;
-    color: #8e8e93;
+    color: #000000;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -231,6 +399,7 @@ body {
 .chatbox {
     flex: 1;
     position: relative;
+    padding-top: 20px;
     
 }
 
@@ -255,7 +424,7 @@ body {
 .menu-dots-btn {
     background: transparent;
     border: none;
-    color: #8e8e93;
+    color: #000000;
     font-size: 16px;
     letter-spacing: 1.5px;
     cursor: pointer;

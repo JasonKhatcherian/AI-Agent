@@ -91,8 +91,10 @@ function renderSidebar() {
         titleSpan.textContent = hasMoreWords ? `${shortTitle}...` : shortTitle;
         // Load session on clicking the text
         item.onclick = (e) => {
-            loadSession(session.id);
-            renderSidebar();
+            if (!e.target.closest('.item-menu-dots-btn') && !e.target.closest('.item-dropdown')) {
+                loadSession(session.id);
+                renderSidebar();
+            }
         };
 
         // 2. Input element (hidden by default) for renaming
@@ -105,6 +107,7 @@ function renderSidebar() {
         renameInput.onkeydown = (e) => {
             if (e.key === 'Enter') {
                 saveInlineRename(session.id, renameInput.value);
+                updateTemp();
             }
             if (e.key === 'Escape') {
                 renderSidebar(); // Cancels and resets
@@ -210,11 +213,15 @@ function saveInlineRename(sessionId, newTitle) {
 
 function toggleItemDropdown(event, sessionId) {
     event.stopPropagation();
-    const dropdown = document.getElementById(`item-dropdown-${sessionId}`);
+    const settingsDropdown = document.getElementById("dropdown-menu");
+    if (settingsDropdown) {
+        settingsDropdown.classList.remove("show");
+    }
+    const currentItem = event.currentTarget.parentElement;
+    const dropdown = currentItem.querySelector('.item-dropdown');
+    if (!dropdown) return;
     const isAlreadyOpen = !dropdown.classList.contains('hidden');
-    
     closeAllItemDropdowns();
-    
     if (!isAlreadyOpen) {
         dropdown.classList.remove('hidden');
     }
@@ -384,7 +391,11 @@ function togglePanel() {
 renderSidebar();
 function toggleDropdown(event) {
     event.stopPropagation();
-    document.getElementById("dropdown-menu").classList.toggle("show");
+    closeAllItemDropdowns();
+    const dropdown = document.getElementById("dropdown-menu");
+    if (dropdown) {
+        dropdown.classList.toggle("show");
+    }
 }
 window.addEventListener('click', function(event) {
     if (!event.target.matches('.menu-dots-btn')) {
@@ -437,6 +448,6 @@ window.addEventListener('DOMContentLoaded', ()=>{
         document.body.classList.remove('dark-mode');
         updateThemeUI(false);
     }
-    initializeChatFromHash();
+    InitializeChat();
 });
 window.addEventListener('popstate',InitializeChat );

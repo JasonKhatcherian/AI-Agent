@@ -1,3 +1,13 @@
+/* ================= 1. CORE LAYOUT & SYSTEM RESET ================= */
+body {
+    overflow: hidden;
+    font-family: "Open Sans", sans-serif;
+    font-optical-sizing: auto;
+    font-weight: 400;
+    font-style: normal;
+    font-variation-settings: "wdth" 100;
+    background-color: rgb(255, 255, 255);
+}
 .container {
     display: flex;
     width: 100vw;
@@ -8,47 +18,30 @@
     top: 0;
     left: 0;
 }
-
 .title {
     text-align: center;
-    margin:0 auto;
+    margin: 0 auto;
     margin-right: 40px;
-    color: #2D3142;
+    color: rgb(0, 0, 0);
     min-height: 1.2em;
     padding-left: 110px;
     padding-right: 110px;
 }
-#temp-image{
+#temp-image {
     float: right;
     cursor: pointer;
     margin-top: -42px;
-    margin-right:47px;
+    margin-right: 47px;
     border-radius: 8px;
     padding: 6px;
     color: #000000;
+    transition: background-color 0.15s ease;
 }
-#temp-image:hover{
+#temp-image:hover, .toggle-btn:hover, .menu-dots-btn:hover, .newchat:hover {
     background-color: rgba(142, 142, 147, 0.2) !important;
 }
-body {
-    overflow: hidden;
-    font-family: "Open Sans", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 400;
-    font-style: normal;
-    font-variation-settings: "wdth" 100;
-    background-color: rgb(255, 255, 255);
-}
-.title { color: rgb(0, 0, 0); }
-.input-container { background-color: #f4f4f4; border-color: #e3e3e3; }
-.search { background-color: transparent; color: rgb(0, 0, 0); }
-.sender { background-color: #ffffff; }
-.sender svg { color: #000000; }
-.toggle-btn { color: #000000; background-color: transparent; }
-.leftpanel { background-color: #F9F9FB; color: #4A4A4A; border-color: #E8E8EC; }
-.newchat { color: #000000; }
-#temp-image { color: #000000; }
-.menu-dots-btn { color: #000000; }
+
+/* ================= 2. LIGHT/DARK STATE TOGGLES (FOR CURRENT JS) ================= */
 body.dark-mode {
     background-color: rgb(0, 0, 0);
 }
@@ -60,16 +53,88 @@ body.dark-mode .sender svg { color: #ffffff; }
 body.dark-mode .newchat { color: #E3E6EB; }
 body.dark-mode .toggle-btn { background-color: #3A3A3C; color: #E3E6EB; }
 body.dark-mode .leftpanel { background-color: #1E1F22; color: #E3E6EB; border-color: #2F2F33; }
-body.dark-mode #temp-image { color: #E3E6EB; }
-body.dark-mode .menu-dots-btn { color: #E3E6EB; }
+body.dark-mode #temp-image, body.dark-mode .menu-dots-btn { color: #E3E6EB; }
+
+/* ================= 3. LEFT PANEL & CHAT HISTORY LISTS ================= */
+.leftpanel {
+    height: 100vh;
+    padding: 0px;
+    width: 175px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+    background-color: #F9F9FB;
+    color: #2D3142;
+    border: 1px solid #E8E8EC;
+    flex-shrink: 0;
+    transition: margin-left 0.6s ease-in-out, opacity 0.3s ease-in-out;
+    overflow: hidden;
+}
+.container.panel-closed .leftpanel {
+    margin-left: -178px;
+}
 #recent {
     float: left;
     width: calc(100% - 10px); 
     padding-left: 16px;
     box-sizing: border-box;
 }
+.history {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    padding-bottom: 15px;
+    scrollbar-color: rgba(120, 120, 120, 0.4) transparent;
+    scrollbar-width: 15px;
+}
+.history::-webkit-scrollbar { width: 6px; }
+.history::-webkit-scrollbar-track { background: transparent !important; }
+.history::-webkit-scrollbar-thumb { background-color: rgba(120, 120, 120, 0.4); border-radius: 10px; }
+
+.newchat {
+    font-family: "Open Sans", sans-serif;
+    font-weight: 500;
+    margin: 10px 8px 12px 8px;
+    width: calc(100% - 16px);
+    height: 44px;
+    background-color: transparent; 
+    color: #000000;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    gap: 12px;
+    box-sizing: border-box;  
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+.newchat-icon { width: 18px; height: 18px; flex-shrink: 0; }
+
+.toggle-btn {
+    margin-left: 5px;
+    transform: translateY(20px);
+    background: transparent !important;
+    border: none;
+    color: #000000;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    transition: background-color 0.15s ease, color 0.15s ease;
+    padding: 0;
+}
+
 .chat-log-item {
-    position: relative; /* Allows precise placement of the child dropdown card */
+    position: relative; 
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -86,20 +151,14 @@ body.dark-mode .menu-dots-btn { color: #E3E6EB; }
     background-color: rgba(27, 24, 184, 0.15);
     font-weight: 700;
 }
-.chat-log-item:hover {
-    background-color: rgba(142, 142, 147, 0.2);
-}
-
-/* Chat Title Text Span - Prevents title overflow or crashing into '•••' */
+.chat-log-item:hover { background-color: rgba(142, 142, 147, 0.2); }
 .item-title-span {
     flex-grow: 1;
     overflow: hidden;
     white-space: nowrap;
     text-overflow: ellipsis;
-    padding-right: 24px; /* Leaves clear breathing space for the button */
+    padding-right: 24px; 
 }
-
-/* Inline Edit Field Input styling */
 .item-rename-input {
     flex-grow: 1;
     width: 100%;
@@ -112,13 +171,10 @@ body.dark-mode .menu-dots-btn { color: #E3E6EB; }
     outline: none;
     box-sizing: border-box;
 }
-
-/* Sidebar '•••' Button - Revealed only on hovering over the chat row */
 .item-menu-dots-btn {
     position: absolute;
     right: 12px;
     background: transparent;
-
     border: none;
     color: inherit;
     font-size: 12px;
@@ -126,26 +182,18 @@ body.dark-mode .menu-dots-btn { color: #E3E6EB; }
     cursor: pointer;
     padding: 4px 6px;
     border-radius: 6px;
-    opacity: 0; /* hidden by default */
+    opacity: 0; 
     transition: opacity 0.15s ease, background-color 0.15s ease;
 }
-.chat-log-item:hover .item-menu-dots-btn,
-.item-menu-dots-btn:focus {
-    opacity: 1;
-}
+.chat-log-item:hover .item-menu-dots-btn, .item-menu-dots-btn:focus { opacity: 1; }
+.item-menu-dots-btn:hover { background-color: rgba(142, 142, 147, 0.25); }
 
-.item-menu-dots-btn:hover {
-    background-color: rgba(142, 142, 147, 0.25);
-}
-
-/* The Floating Context Menu Card (Exactly matches reference image dimensions) */
-.item-dropdown {
+/* ================= 4. CONSOLIDATED DROPDOWNS (SIDEBAR & HEADER) ================= */
+.item-dropdown, .dropdown-content {
     position: absolute;
-    right: 8px;
-    top: 38px;
-    background-color: #2b2b2b; /* Dark card background */
+    background-color: #2b2b2b;
     box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.4);
-    border-radius: 14px; /* Perfectly curves the menu edges */
+    border-radius: 14px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     z-index: 100;
     width: 140px;
@@ -154,71 +202,74 @@ body.dark-mode .menu-dots-btn { color: #E3E6EB; }
     flex-direction: column;
     gap: 2px;
 }
+.item-dropdown { right: 8px; top: 38px; }
+.dropdown-content { display: none; right: 0; top: calc(100% + 6px); }
+.dropdown-content.show { display: flex !important; }
 
-/* Switches color values cleanly if your body changes to Light Mode */
-body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown {
+body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown,
+body:not([style*="background-color: rgb(0, 0, 0)"]) .dropdown-content {
     background-color: #fcfcfd;
     border: 1px solid #e3e3e3;
     box-shadow: 0px 8px 24px rgba(0, 0, 0, 0.12);
 }
 
-/* Individual Dropdown Action Button inside Menu Card */
-.item-dropdown-btn {
+/* Individual list options/buttons inside menus */
+.item-dropdown-btn, .dropdown-item {
     width: 100%;
     background: transparent;
     border: none;
-    border-radius: 8px; /* Inner bounding curve */
+    border-radius: 8px;
     text-align: left;
     padding: 8px 12px;
     font-size: 13.5px;
     font-weight: 500;
-    color: #f4f4f5; /* Off-white text matching photo */
+    color: #f4f4f5;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 12px; /* Clean icon spacing */
+    gap: 12px;
     transition: background-color 0.15s ease;
+    box-sizing: border-box;
 }
-
-body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn {
+body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn,
+body:not([style*="background-color: rgb(0, 0, 0)"]) .dropdown-item {
     color: #2D3142;
 }
-
-.item-dropdown-btn:hover {
-    background-color: rgba(255, 255, 255, 0.08);
-}
-
-body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn:hover {
+.item-dropdown-btn:hover, .dropdown-item:hover { background-color: rgba(255, 255, 255, 0.08); }
+body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn:hover,
+body:not([style*="background-color: rgb(0, 0, 0)"]) .dropdown-item:hover {
     background-color: #f5f5f7;
 }
+.item-dropdown-btn svg, .dropdown-item svg { flex-shrink: 0; color: inherit; opacity: 0.85; }
 
-.item-dropdown-btn svg {
-    flex-shrink: 0;
-    color: inherit;
-    opacity: 0.85;
-}
-
-/* Red Accent for delete option */
-.item-dropdown-btn.item-delete-btn {
-    color: #ff5c5c;
-}
-
-body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-delete-btn {
+/* Red Accents for both Delete buttons */
+.item-dropdown-btn.item-delete-btn, .dropdown-item.delete-btn { color: #ff5c5c; }
+body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-delete-btn,
+body:not([style*="background-color: rgb(0, 0, 0)"]) .dropdown-item.delete-btn {
     color: #df1b1b;
 }
-
-.item-dropdown-btn.item-delete-btn:hover {
-    background-color: rgba(255, 92, 92, 0.12);
+.item-dropdown-btn.item-delete-btn:hover, .dropdown-item.delete-btn:hover { background-color: rgba(255, 92, 92, 0.12); }
+body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-delete-btn:hover,
+body:not([style*="background-color: rgb(0, 0, 0)"]) .dropdown-item.delete-btn:hover {
+    background-color: #fff2f2 !important;
 }
 
-body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-delete-btn:hover {
-    background-color: #fff2f2;
+/* ================= 5. MAIN CHATBOX & MESSAGE CARDS ================= */
+.chatbox { flex: 1; position: relative; padding-top: 20px; }
+.chat-history {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    padding: 5px;
+    height: 75vh;
+    overflow-y: auto;
 }
+.message { max-width: 75%; padding: 10px; margin: 10px; border-radius: 10px; }
+.user-message { align-self: flex-end; background-color: #007bff; color: white; }
+.ai-message { align-self: flex-start; background-color: #3A3A3C; color: white; }
 
-/* General Visibility Utility */
-.hidden {
-    display: none !important;
-}
+/* Input field & Text Area Container */
 .input-container {
     display: flex;
     align-items: center;
@@ -238,9 +289,8 @@ body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-dele
     max-width: 850px;
     transition: background-color 0.15s ease, border-color 0.15s ease;
 }
-
 .search {
-    font-family: "Inter", "Segoe UI", Arial, sans-serif !important;
+    font-family: "Inter", sans-serif !important;
     flex-grow: 1;
     width: 100%;
     min-width: 0;
@@ -250,16 +300,14 @@ body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-dele
     font-size: 15px;
     line-height: 20px; 
     color: #2D3142;     
-    padding: 3px 0;
+    padding: 5px 0px;
     resize: none;
     height: 32px;
     max-height: 104px;
     overflow-y: auto;
     box-sizing: border-box;
     field-sizing: content;
-    
 }
-
 .sender {
     background-color: #ffffff; 
     color: #000000;
@@ -274,145 +322,6 @@ body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-dele
     margin-left: 8px;
 }
 
-
-
-.chat-history {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    width: 100%;
-    padding: 5px;
-    height: 75vh;
-    overflow-y: auto;
-}
-
-.message {
-    max-width: 75%;
-    padding: 10px;
-    margin: 10px;
-    border-radius: 10px;
-}
-
-.user-message {
-    width: auto;
-    align-self: flex-end;
-    background-color: #007bff;
-    color: white;
-}
-
-.ai-message {
-    width: auto;
-    align-self: flex-start;
-    background-color: #3A3A3C;
-    color: white;
-}
-
-.leftpanel {
-    height: 100vh;
-    padding: 0px;
-    width: 175px;
-   /* min-width: 100px;
-    max-width: 350px;*/
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-    background-color: #F9F9FB;
-    color: #2D3142;
-    border: 1px solid #E8E8EC;
-    flex-shrink: 0;
-    transition: margin-left 0.9s ease-in-out, opacity 0.3s ease-in-out;
-    /*resize: horizontal;*/
-    overflow: hidden;
-}
-.history::-webkit-scrollbar {
-    width: 6px;
-}
-.history::-webkit-scrollbar-track {
-    background: transparent !important;
-}
-.history::-webkit-scrollbar-thumb {
-    background-color: rgba(120, 120, 120, 0.4);
-    border-radius: 10px;
-}
-.history {
-    scrollbar-color: rgba(120, 120, 120, 0.4) transparent;
-    scrollbar-width: 15px;
-}
-.container.panel-closed .leftpanel {
-    margin-left: -178px;
-}
-.newchat {
-    font-family: "Open Sans", sans-serif;
-    font-optical-sizing: auto;
-    font-weight: 400;
-    font-style: normal;
-    font-variation-settings: "wdth" 100;
-    margin-top:10px ;
-    margin-left: 8px;
-    width: calc(100% - 16px);
-    height: 44px;
-    background-color: transparent; 
-    color: #000000;
-    border: none;
-    border-radius: 12px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    padding: 10px 12px;
-    gap: 12px;
-    margin-bottom: 12px;
-    box-sizing: border-box;  
-    transition: background-color 0.15s ease, color 0.15s ease;
-}
-.newchat-icon {
-    width: 18px;
-    height: 18px;
-    flex-shrink: 0;
-}
-.newchat:hover {
-    background-color: rgba(142, 142, 147, 0.2);
-}
-.toggle-btn {
-    margin-left: 5px;
-    transform: translateY(20px);
-    background: transparent !important;
-    border: none;
-    color: #000000;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border-radius: 8px;
-    transition: background-color 0.15s ease, color 0.15s ease;
-    padding: 0;
-}
-.toggle-btn:hover {
-    background-color: rgba(142, 142, 147, 0.2) !important;
-}
-
-.chatbox {
-    flex: 1;
-    position: relative;
-    padding-top: 20px;
-    
-}
-
-.history {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 8px;
-    width: 100%;
-    flex: 1;
-    overflow-y: auto;
-    padding-bottom: 15px;
-}
 .menu-dropdown-container {
     float: right;
     position: relative;
@@ -420,7 +329,6 @@ body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-dele
     align-items: center;
     margin-top: -40px;
 }
-
 .menu-dots-btn {
     background: transparent;
     border: none;
@@ -433,50 +341,4 @@ body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-dele
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.menu-dots-btn:hover {
-    background-color: rgba(142, 142, 147, 0.2);
-}
-
-
-.dropdown-content {
-    display: none;
-    position: absolute;
-    right: 0;
-    top: calc(100% + 6px);
-    background-color: #ffffff;
-    min-width: 170px;
-    box-shadow: 0px 4px 14px rgba(0, 0, 0, 0.1);
-    border-radius: 8px;
-    border: 1px solid #e3e3e3;
-    z-index: 100;
-    padding: 4px 0;
-}
-
-.dropdown-content.show {
-    display: block;
-}
-.dropdown-item {
-    width: 100%;
-    padding: 10px 14px;
-    background: transparent;
-    border: none;
-    text-align: left;
-    font-size: 14px;
-    color: #202123;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.dropdown-item:hover {
-    background-color: #f5f5f5;
-}
-.dropdown-item.delete-btn:hover {
-    background-color: #fff5f5;
-    color: #df1b1b;
-}
-.dropdown-item.delete-btn{
-    color:#df1b1b;
-
-}
+.hidden { display: none !important; }

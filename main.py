@@ -27,10 +27,19 @@ def chat():
 
     messages = []
     for msg in frontend_history:
-        messages.append(types.Content(role=msg.get('role'), parts=[types.Part(text=msg.get('text'))]))
+        messages.append(
+            types.Content(
+                role=msg.get('role'),
+                parts=[
+                    types.Part(text=f"{msg.get('text')}")
+                ]
+            )
+        )
     
-    messages.append(types.Content(role="user", parts=[types.Part(text=user_prompt)]))
-
+    last_msg_text = frontend_history[-1].get('text') if frontend_history else None
+    if last_msg_text != user_prompt:
+        messages.append(types.Content(role="user", parts=[types.Part(text=user_prompt)]))
+    print(messages)
     final_text = ""
     try:
         for _ in range(20):

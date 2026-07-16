@@ -362,7 +362,7 @@ function loadSession(id) {
 }
 
 function createNewChat() {
-    
+    tempChat.style.display = "block";
     title.style.display = "block";
     title.innerText = "What’s on your mind today?";
     document.title = "AI-AGENT";

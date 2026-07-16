@@ -49,6 +49,9 @@ def chat():
                 config=types.GenerateContentConfig(
                     tools=[available_functions],
                     system_instruction=system_prompt,
+                    thinking_config=types.ThinkingConfig(
+                        thinking_budget=0
+                    ),
                 ),
             )
 
@@ -77,6 +80,7 @@ def chat():
         return jsonify({"reply": final_text})
 
     except Exception as e:
+        print(e)
         return jsonify({"reply": f"Error: {str(e)}"}), 500
 
 if __name__ == "__main__":

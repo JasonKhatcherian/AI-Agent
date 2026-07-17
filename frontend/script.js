@@ -15,6 +15,7 @@ function updateTemp() {
         if ((chatHistory && chatHistory.children.length > 0) || currentSessionId) {
             tempChat.style.display = "none";
             const session = sessions.find(s => s.id === currentSessionId);
+            if(session){
             const words = session.title.split(' ');
             const shortTitle = words.slice(0, 4).join(' ');
             const hasMoreWords = words.length > 4;
@@ -22,8 +23,7 @@ function updateTemp() {
             title.innerText = displayTitle;
             title.style.display = "block";
             document.title=displayTitle; 
-}
-        
+}           }
     }else {
             tempChat.style.display = "block";
             document.title = "AI-AGENT";
@@ -263,7 +263,7 @@ async function saveData(event) {
             messages: []
         };
         sessions.push(newSession);
-        const newUrl = window.location.origin + window.location.pathname + `#${currentSessionId}`;
+        const newUrl = `/session/${currentSessionId}`;
         window.history.pushState({ sessionId: currentSessionId }, "", newUrl);
         renderSidebar();
     }
@@ -339,7 +339,7 @@ function loadSession(id) {
     currentSessionId = id;
     active = false; 
 
-    const newUrl = window.location.origin + window.location.pathname + `#${id}`;
+    const newUrl = `/session/${id}`;
     window.history.pushState({ sessionId: id }, "", newUrl);
     if (title) {
         title.innerText = titleSpan.textContent;
@@ -367,7 +367,7 @@ function createNewChat() {
     title.innerText = "What’s on your mind today?";
     document.title = "AI-AGENT";
 
-    const cleanUrl = window.location.origin + window.location.pathname;
+   const cleanUrl = "/";
     window.history.pushState({}, "", cleanUrl);
 
     currentSessionId = null;
@@ -425,17 +425,22 @@ function handleAutoGrow() {
     searchBox.style.height = searchBox.scrollHeight + "px";
 }
 searchBox.addEventListener("input", handleAutoGrow);
-function InitializeChat(){
-    const hash=window.location.hash;
-    if (hash){
-        const urlSessionId=hash.replace('#','');
-        const matchingSession=sessions.find(s=>s.id===urlSessionId);
+function InitializeChat() {
+    const path = window.location.pathname;
+    const pathSegments = path.split("/").filter(Boolean); // e.g., ["session", "session_123"]
     
-    if(matchingSession){
-        loadSession(urlSessionId);
-        renderSidebar();
-    }}
-    else{
+    // Check if the current URL matches /session/<id>
+    if (pathSegments[0] === "session" && pathSegments[1]) {
+        const urlSessionId = pathSegments[1];
+        const matchingSession = sessions.find(s => s.id === urlSessionId);
+        
+        if (matchingSession) {
+            loadSession(urlSessionId);
+            renderSidebar();
+        } else {
+            createNewChat();
+        }
+    } else {
         createNewChat();
     }
 }

@@ -2,12 +2,12 @@ import os
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify,send_from_directory
 from flask_cors import CORS
 from functions.call_function import available_functions, call_function
 from prompts import system_prompt
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='frontend')
 CORS(app)
 
 load_dotenv()
@@ -39,12 +39,11 @@ def chat():
     last_msg_text = frontend_history[-1].get('text') if frontend_history else None
     if last_msg_text != user_prompt:
         messages.append(types.Content(role="user", parts=[types.Part(text=user_prompt)]))
-    print(messages)
     final_text = ""
     try:
         for _ in range(20):
             response = client.models.generate_content(
-                model="gemini-2.5-flash",
+                model="gemini-3.5-flash",
                 contents=messages,
                 config=types.GenerateContentConfig(
                     tools=[available_functions],
@@ -82,6 +81,22 @@ def chat():
     except Exception as e:
         print(e)
         return jsonify({"reply": f"Error: {str(e)}"}), 500
+
+@app.route('/')
+def index():
+    return send_from_directory(app.static_folder, 'index.html')
+
+# Catch-All Route: Intercepts browser requests to /session/<id> and gives back index.html
+@app.route('/session/<session_id>')
+@app.route('/<path:path>')
+def catch_all(path=None, session_id=None):
+    # If the browser is requesting a real file (like style.css or script.js), let Flask serve it
+    if path and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    
+    # Otherwise, return your index.html silently so the JS router can display the page
+    return send_from_directory(app.static_folder, 'index.html')
+
 
 if __name__ == "__main__":
     app.run(host='127.0.0.1', port=5000, debug=True)

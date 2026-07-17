@@ -146,6 +146,26 @@ function renderSidebar() {
             e.stopPropagation();
             startInlineRename(item, titleSpan, renameInput, itemMenuBtn);
         };
+        //renaming with AI button
+        const renameAI = document.createElement('button');
+        renameAI.className = 'item-dropdown-btn';
+        renameAI.innerHTML = `
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path>
+    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"></path>
+            </svg>
+            <span>Rename with AI</span>
+        `;
+        renameAI.onclick = (e) => {
+            e.stopPropagation();
+            closeAllItemDropdowns();
+            startInAIRename(session.id,e.currentTarget);
+        };
+        
+        renameOpt.onclick = (e) => {
+            e.stopPropagation();
+            startInlineRename(item, titleSpan, renameInput, itemMenuBtn);
+        };
 
         // Delete Button with Trash Can SVG
         const deleteOpt = document.createElement('button');
@@ -174,6 +194,7 @@ function renderSidebar() {
         };
 
         itemDropdown.appendChild(renameOpt);
+        itemDropdown.appendChild(renameAI);
         itemDropdown.appendChild(deleteOpt);
 
         // Assemble row components
@@ -185,7 +206,28 @@ function renderSidebar() {
         historyElement.appendChild(item);
     });
 }
+async function startInAIRename(sessionId,btn){
+    const session = sessions.find(s => s.id === sessionId);
+    if (!session) return;
+    if (btn) btn.disabled=true;
+    try {
+        const response = await fetch('http://127.0.0.1:5000/api/rename', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ messages: session.messages })
+        });
 
+        const data = await response.json();
+        if (data.title) {
+            saveInlineRename(sessionId, data.title);
+            updateTemp();
+        }
+    } catch (error) {
+        console.error("Failed to rename with AI:", error);
+    }finally{
+    if(btn) btn.disabled=false;
+    }
+}
 // Global functions for state handling
 function startInlineRename(itemRow, titleSpan, input, menuBtn) {
     closeAllItemDropdowns();
@@ -282,6 +324,9 @@ async function saveData(event) {
             text: storedValue
         });
         localStorage.setItem("chat_sessions", JSON.stringify(sessions));
+        if (currentSession.messages.length === 1) {
+        startInAIRename(currentSession.id, { disabled: false });
+    }
     }
 
     userInput.value = "";

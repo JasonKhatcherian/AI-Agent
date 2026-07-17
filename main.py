@@ -15,7 +15,29 @@ api_key = os.environ.get("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("API key not found!")
 client = genai.Client(api_key=api_key)
-
+def generate_session_title(messages):
+    if not messages:
+        return "New Chat"
+    last_two=messages[-2:]
+    history_text = "\n".join([msg.get('text', '')[:150] for msg in last_two])
+    print(history_text)
+    naming_prompt = f"Summarize the following chat into a short title (max 3 words). Only return the title:\n{history_text}"
+    response = client.models.generate_content(
+        model="gemini-3.5-flash",
+        contents=naming_prompt
+    )
+    return response.text.strip()
+@app.route('/api/rename', methods=['POST'])
+def rename():
+    data = request.get_json()
+    messages = data.get('messages', [])
+    
+    try:
+        new_title = generate_session_title(messages)
+        return jsonify({"title": new_title})
+    except Exception as e:
+        print(f"Error in rename route: {e}")
+        return jsonify({"error": str(e)}), 500
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.get_json()

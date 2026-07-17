@@ -197,6 +197,8 @@ body.dark-mode #temp-image, body.dark-mode .menu-dots-btn { color: #E3E6EB; }
     display: flex;
     flex-direction: column;
     gap: 2px;
+    right: 0 !important; 
+    left: auto !important;
 }
 .item-dropdown { right: 8px; top: 38px; }
 .dropdown-content { display: none; right: 0; top: calc(100% + 6px); }
@@ -246,6 +248,10 @@ body:not([style*="background-color: rgb(0, 0, 0)"]) .dropdown-item.delete-btn {
 body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-delete-btn:hover,
 body:not([style*="background-color: rgb(0, 0, 0)"]) .dropdown-item.delete-btn:hover {
     background-color: #fff2f2 !important;
+}
+.chat-log-item:nth-last-child(-n+3) .item-dropdown {
+    transform: translateY(-100%);
+    top:0;
 }
 
 .chatbox { flex: 1; position: relative; padding-top: 20px; }
@@ -334,3 +340,7 @@ body:not([style*="background-color: rgb(0, 0, 0)"]) .dropdown-item.delete-btn:ho
 }
 
 .hidden { display: none !important; }
+button:disabled {
+    opacity: 0.6;
+    cursor: progress;
+}

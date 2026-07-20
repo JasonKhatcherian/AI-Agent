@@ -249,9 +249,13 @@ body:not([style*="background-color: rgb(0, 0, 0)"]) .item-dropdown-btn.item-dele
 body:not([style*="background-color: rgb(0, 0, 0)"]) .dropdown-item.delete-btn:hover {
     background-color: #fff2f2 !important;
 }
-.chat-log-item:nth-last-child(-n+3) .item-dropdown {
-    transform: translateY(-100%);
-    top:0;
+.chat-log-item .item-dropdown {
+    bottom: auto;
+}
+.chat-log-item.position-up .item-dropdown {
+    top: auto;
+    bottom: 100%;
+    margin-bottom: 8px;
 }
 
 .chatbox { flex: 1; position: relative; padding-top: 20px; }

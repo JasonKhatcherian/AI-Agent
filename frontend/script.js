@@ -256,12 +256,24 @@ function saveInlineRename(sessionId, newTitle) {
 function toggleItemDropdown(event, sessionId) {
     event.stopPropagation();
     const settingsDropdown = document.getElementById("dropdown-menu");
-    if (settingsDropdown) {
-        settingsDropdown.classList.remove("show");
-    }
+    if (settingsDropdown) settingsDropdown.classList.remove("show");
+
     const currentItem = event.currentTarget.parentElement;
     const dropdown = currentItem.querySelector('.item-dropdown');
     if (!dropdown) return;
+
+    // Remove the class first to reset position
+    currentItem.classList.remove('position-up');
+
+    // Logic: check if the dropdown would go off-screen
+    const rect = currentItem.getBoundingClientRect();
+    const containerHeight = document.querySelector('.history').clientHeight;
+    
+    // If the item is in the bottom 30% of the history container, force it up
+    if (rect.top > containerHeight * 0.95) {
+        currentItem.classList.add('position-up');
+    }
+
     const isAlreadyOpen = !dropdown.classList.contains('hidden');
     closeAllItemDropdowns();
     if (!isAlreadyOpen) {
@@ -501,3 +513,9 @@ window.addEventListener('DOMContentLoaded', ()=>{
     InitializeChat();
 });
 window.addEventListener('popstate',InitializeChat );
+window.addEventListener('keydown',(event)=>{
+    if (event.ctrlKey && event.altKey && event.key=='n'){
+        event.preventDefault();
+        createNewChat();
+    }
+});

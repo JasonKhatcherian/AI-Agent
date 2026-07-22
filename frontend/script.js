@@ -1,53 +1,62 @@
-let sessions = JSON.parse(localStorage.getItem("chat_sessions")) || [];
+let sessions = [];
 let currentSessionId = null;
 let active = false; 
 let storedValue = "";
-let counter=1;
+let counter = 1;
+
 const image = document.getElementById('click-image');
 const tempChat = document.getElementById('temp-image');
 const historyElement = document.querySelector('.history');
 const title = document.querySelector('.title');
-const tglBtn=document.querySelector('.toggle-btn');
+const tglBtn = document.querySelector('.toggle-btn');
 const chatHistory = document.getElementById('chat-history');
 const newChatBtn = document.getElementById('new-chat-btn');
+
+async function fetchSessionsFromDB() {
+    try {
+        const response = await fetch('/api/sessions');
+        sessions = await response.json();
+        renderSidebar();
+    } catch (err) {
+        console.error("Failed to load sessions from database:", err);
+    }
+}
+
 function updateTemp() {
     if (tempChat) {
         if ((chatHistory && chatHistory.children.length > 0) || currentSessionId) {
             tempChat.style.display = "none";
             const session = sessions.find(s => s.id === currentSessionId);
-            if(session){
-            const words = session.title.split(' ');
-            const shortTitle = words.slice(0, 4).join(' ');
-            const hasMoreWords = words.length > 4;
-            displayTitle = hasMoreWords ? `${shortTitle}...` : shortTitle;
-            title.innerText = displayTitle;
-            title.style.display = "block";
-            document.title=displayTitle; 
-}           }
-    }else {
+            if (session) {
+                const words = session.title.split(' ');
+                const shortTitle = words.slice(0, 4).join(' ');
+                const hasMoreWords = words.length > 4;
+                const displayTitle = hasMoreWords ? `${shortTitle}...` : shortTitle;
+                title.innerText = displayTitle;
+                title.style.display = "block";
+                document.title = displayTitle; 
+            }
+        } else {
             tempChat.style.display = "block";
             document.title = "AI-AGENT";
         }
-    
+    }
 }
 
 if (tempChat) {
     updateTemp();
-}
-
-if (tempChat) {
     tempChat.addEventListener('click', function() {
         if (active === false) {
             if (title) title.innerText = "Temporary Chat";
             active = true;
         } else {
             if (title) title.innerText = "What’s on your mind today?";
-
             active = false;
         }
         updateTemp(); 
     });
 }
+
 const dropdownDarkModeBtn = document.getElementById('click-image-btn');
 if (dropdownDarkModeBtn) {
     dropdownDarkModeBtn.addEventListener('click', function (event) {
@@ -58,8 +67,9 @@ if (dropdownDarkModeBtn) {
         document.getElementById("dropdown-menu").classList.remove("show");
     });
 }
-function updateThemeUI(isDark){
-    const themeText = document.getElementById('click-image-btn').querySelector('.theme-text');
+
+function updateThemeUI(isDark) {
+    const themeText = document.getElementById('click-image-btn')?.querySelector('.theme-text');
     if (themeText) {
         themeText.textContent = isDark ? "Toggle Light Mode" : "Toggle Dark Mode";
     }
@@ -68,28 +78,20 @@ function updateThemeUI(isDark){
 function renderSidebar() {
     if (!historyElement) return;
     historyElement.innerHTML = '';
-    if(newChatBtn){
+    if (newChatBtn) {
         newChatBtn.classList.toggle('active', !currentSessionId);
     }
+
     sessions.forEach(session => {
         const item = document.createElement('div');
-        if (session.id === currentSessionId) {
-            item.className = 'chat-log-item active';
-        } else {
-            item.className = 'chat-log-item';
-        }
+        item.className = session.id === currentSessionId ? 'chat-log-item active' : 'chat-log-item';
 
-
-        // item.dataset.id = session.id;
-
-        // 1. Text display element
-        
         const titleSpan = document.createElement('span');
         titleSpan.className = 'item-title-span';
         const shortTitle = session.title.split(' ').slice(0, 4).join(' ');
         const hasMoreWords = session.title.split(' ').length > 4;
         titleSpan.textContent = hasMoreWords ? `${shortTitle}...` : shortTitle;
-        // Load session on clicking the text
+
         item.onclick = (e) => {
             if (!e.target.closest('.item-menu-dots-btn') && !e.target.closest('.item-dropdown')) {
                 loadSession(session.id);
@@ -97,28 +99,25 @@ function renderSidebar() {
             }
         };
 
-        // 2. Input element (hidden by default) for renaming
         const renameInput = document.createElement('input');
         renameInput.type = 'text';
         renameInput.className = 'item-rename-input hidden';
         renameInput.value = session.title;
         
-        // Handle input events (Save on Enter, Cancel on Escape, Save on Blur)
-        renameInput.onkeydown = (e) => {
+        renameInput.onkeydown = async (e) => {
             if (e.key === 'Enter') {
-                saveInlineRename(session.id, renameInput.value);
+                await saveInlineRename(session.id, renameInput.value);
                 updateTemp();
             }
             if (e.key === 'Escape') {
-                renderSidebar(); // Cancels and resets
+                renderSidebar();
             }
         };
-        renameInput.onblur = () => {
-            saveInlineRename(session.id, renameInput.value);
+        renameInput.onblur = async () => {
+            await saveInlineRename(session.id, renameInput.value);
         };
-        renameInput.onclick = (e) => e.stopPropagation(); // Stop clicking input from loading session
+        renameInput.onclick = (e) => e.stopPropagation();
 
-        // 3. Three-dot options button
         const itemMenuBtn = document.createElement('button');
         itemMenuBtn.className = 'item-menu-dots-btn';
         itemMenuBtn.innerHTML = '•••';
@@ -127,12 +126,10 @@ function renderSidebar() {
             toggleItemDropdown(e, session.id);
         };
 
-        // 4. Custom Floating Dropdown Menu (Matching your reference image design)
         const itemDropdown = document.createElement('div');
         itemDropdown.className = 'item-dropdown hidden';
         itemDropdown.id = `item-dropdown-${session.id}`;
 
-        // Rename Button with Pencil SVG
         const renameOpt = document.createElement('button');
         renameOpt.className = 'item-dropdown-btn';
         renameOpt.innerHTML = `
@@ -146,28 +143,22 @@ function renderSidebar() {
             e.stopPropagation();
             startInlineRename(item, titleSpan, renameInput, itemMenuBtn);
         };
-        //renaming with AI button
+
         const renameAI = document.createElement('button');
         renameAI.className = 'item-dropdown-btn';
         renameAI.innerHTML = `
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path>
-    <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"></path>
+                <path d="M9.5 2A2.5 2.5 0 0 1 12 4.5v15a2.5 2.5 0 0 1-4.96.44 2.5 2.5 0 0 1-2.96-3.08 3 3 0 0 1-.34-5.58 2.5 2.5 0 0 1 1.32-4.24 2.5 2.5 0 0 1 1.98-3A2.5 2.5 0 0 1 9.5 2Z"></path>
+                <path d="M14.5 2A2.5 2.5 0 0 0 12 4.5v15a2.5 2.5 0 0 0 4.96.44 2.5 2.5 0 0 0 2.96-3.08 3 3 0 0 0 .34-5.58 2.5 2.5 0 0 0-1.32-4.24 2.5 2.5 0 0 0-1.98-3A2.5 2.5 0 0 0 14.5 2Z"></path>
             </svg>
             <span>Rename with AI</span>
         `;
-        renameAI.onclick = (e) => {
+        renameAI.onclick = async (e) => {
             e.stopPropagation();
             closeAllItemDropdowns();
-            startInAIRename(session.id,e.currentTarget);
-        };
-        
-        renameOpt.onclick = (e) => {
-            e.stopPropagation();
-            startInlineRename(item, titleSpan, renameInput, itemMenuBtn);
+            await startInAIRename(session.id, e.currentTarget);
         };
 
-        // Delete Button with Trash Can SVG
         const deleteOpt = document.createElement('button');
         deleteOpt.className = 'item-dropdown-btn item-delete-btn';
         deleteOpt.innerHTML = `
@@ -179,12 +170,12 @@ function renderSidebar() {
             </svg>
             <span>Delete</span>
         `;
-        deleteOpt.onclick = (e) => {
+        deleteOpt.onclick = async (e) => {
             e.stopPropagation();
             const check = confirm("Are you sure you want to delete this chat?");
             if (check) {
+                await fetch(`/api/sessions/${session.id}`, { method: 'DELETE' });
                 sessions = sessions.filter(s => s.id !== session.id);
-                localStorage.setItem("chat_sessions", JSON.stringify(sessions));
                 if (currentSessionId === session.id) {
                     createNewChat();
                 } else {
@@ -197,7 +188,6 @@ function renderSidebar() {
         itemDropdown.appendChild(renameAI);
         itemDropdown.appendChild(deleteOpt);
 
-        // Assemble row components
         item.appendChild(titleSpan);
         item.appendChild(renameInput);
         item.appendChild(itemMenuBtn);
@@ -206,10 +196,11 @@ function renderSidebar() {
         historyElement.appendChild(item);
     });
 }
-async function startInAIRename(sessionId,btn){
+
+async function startInAIRename(sessionId, btn) {
     const session = sessions.find(s => s.id === sessionId);
     if (!session) return;
-    if (btn) btn.disabled=true;
+    if (btn) btn.disabled = true;
     try {
         const response = await fetch('http://127.0.0.1:5000/api/rename', {
             method: 'POST',
@@ -219,16 +210,16 @@ async function startInAIRename(sessionId,btn){
 
         const data = await response.json();
         if (data.title) {
-            saveInlineRename(sessionId, data.title);
+            await saveInlineRename(sessionId, data.title);
             updateTemp();
         }
     } catch (error) {
         console.error("Failed to rename with AI:", error);
-    }finally{
-    if(btn) btn.disabled=false;
+    } finally {
+        if (btn) btn.disabled = false;
     }
 }
-// Global functions for state handling
+
 function startInlineRename(itemRow, titleSpan, input, menuBtn) {
     closeAllItemDropdowns();
     titleSpan.classList.add('hidden');
@@ -238,18 +229,22 @@ function startInlineRename(itemRow, titleSpan, input, menuBtn) {
     input.select();
 }
 
-function saveInlineRename(sessionId, newTitle) {
+async function saveInlineRename(sessionId, newTitle) {
     if (newTitle.trim() === '') {
         renderSidebar();
         return;
     }
+    await fetch(`/api/sessions/${sessionId}/rename`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: newTitle })
+    });
     sessions = sessions.map(session => {
         if (session.id === sessionId) {
             session.title = newTitle;
         }
         return session;
     });
-    localStorage.setItem("chat_sessions", JSON.stringify(sessions));
     renderSidebar();
 }
 
@@ -262,14 +257,11 @@ function toggleItemDropdown(event, sessionId) {
     const dropdown = currentItem.querySelector('.item-dropdown');
     if (!dropdown) return;
 
-    // Remove the class first to reset position
     currentItem.classList.remove('position-up');
 
-    // Logic: check if the dropdown would go off-screen
     const rect = currentItem.getBoundingClientRect();
     const containerHeight = document.querySelector('.history').clientHeight;
     
-    // If the item is in the bottom 30% of the history container, force it up
     if (rect.top > containerHeight * 0.95) {
         currentItem.classList.add('position-up');
     }
@@ -287,7 +279,6 @@ function closeAllItemDropdowns() {
     });
 }
 
-// Global window click listener to close popups when clicking outside
 window.addEventListener('click', function(event) {
     if (!event.target.matches('.menu-dots-btn')) {
         const dropdown = document.getElementById("dropdown-menu");
@@ -301,26 +292,28 @@ window.addEventListener('click', function(event) {
 });
 
 async function saveData(event) {
-    if (event) {
-        event.preventDefault();
-    }
+    if (event) event.preventDefault();
     const userInput = document.querySelector('.search');
     storedValue = userInput.value;
 
     if (storedValue.trim() === "") return;
     if (title) title.innerText = "";
+    
     if (!currentSessionId && !active) {
         currentSessionId = "session_" + Date.now();
-        const newSession = {
-            id: currentSessionId,
-            title: storedValue.substring(0, 20),
-            messages: []
-        };
-        sessions.push(newSession);
-        const newUrl = `/session/${currentSessionId}`;
-        window.history.pushState({ sessionId: currentSessionId }, "", newUrl);
+        const defaultTitle = storedValue.substring(0, 20);
+
+        await fetch('/api/sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: currentSessionId, title: defaultTitle })
+        });
+
+        sessions.unshift({ id: currentSessionId, title: defaultTitle, messages: [] });
+        window.history.pushState({ sessionId: currentSessionId }, "", `/session/${currentSessionId}`);
         renderSidebar();
     }
+
     const currentSession = active ? null : sessions.find(s => s.id === currentSessionId); 
     const newMessage = document.createElement('div');
     newMessage.innerText = storedValue;
@@ -330,15 +323,17 @@ async function saveData(event) {
     updateTemp();
 
     if (currentSession) {
-        currentSession.messages.push({
-            sender: 'user-message',
-            role: 'user',
-            text: storedValue
+        const userMsg = { role: 'user', sender: 'user-message', text: storedValue };
+        currentSession.messages.push(userMsg);
+
+        await fetch(`/api/sessions/${currentSessionId}/messages`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(userMsg)
         });
-        localStorage.setItem("chat_sessions", JSON.stringify(sessions));
         if (currentSession.messages.length === 1) {
-        startInAIRename(currentSession.id, { disabled: false });
-    }
+            startInAIRename(currentSession.id, { disabled: false });
+        }
     }
 
     userInput.value = "";
@@ -354,139 +349,129 @@ async function saveData(event) {
     try {
         const response = await fetch('http://127.0.0.1:5000/api/chat', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 message: storedValue,
                 history: currentSession ? currentSession.messages : []
             })
         });
 
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
+        if (!response.ok) throw new Error('Network response was not ok');
 
         const data = await response.json();
         aiMessage.innerText = data.reply;
 
         if (currentSession) {
-            currentSession.messages.push({
-                sender: 'ai-message',
-                role: 'model',
-                text: data.reply
+            const aiMsg = { role: 'model', sender: 'ai-message', text: data.reply };
+            currentSession.messages.push(aiMsg);
+
+            await fetch(`/api/sessions/${currentSessionId}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(aiMsg)
             });
-            localStorage.setItem("chat_sessions", JSON.stringify(sessions));
         }
     } catch (error) {
         console.error('Error:', error);
         aiMessage.innerText = "Error: Could not reach the server.";
     }
-
     chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
 function loadSession(id) {
     const session = sessions.find(s => s.id === id);
-    const titleSpan = document.createElement('span');
-    titleSpan.className = 'item-title-span';
-    const shortTitle = session.title.split(' ').slice(0, 4).join(' ');
-    const hasMoreWords = session.title.split(' ').length > 4;
-    titleSpan.textContent = hasMoreWords ? `${shortTitle}...` : shortTitle;
+    if (!session) return;
+
+    const words = session.title.split(' ');
+    const shortTitle = words.slice(0, 4).join(' ');
+    const hasMoreWords = words.length > 4;
+    const displayTitle = hasMoreWords ? `${shortTitle}...` : shortTitle;
+
     currentSessionId = id;
     active = false; 
 
-    const newUrl = `/session/${id}`;
-    window.history.pushState({ sessionId: id }, "", newUrl);
+    window.history.pushState({ sessionId: id }, "", `/session/${id}`);
     if (title) {
-        title.innerText = titleSpan.textContent;
+        title.innerText = displayTitle;
         title.style.display = "block"; 
     }
 
     chatHistory.innerHTML = '';
 
-    if (session) {
-        session.messages.forEach(msg => {
-            const msgDiv = document.createElement('div');
-            msgDiv.classList.add('message', msg.sender);
-            msgDiv.innerText = msg.text;
-            chatHistory.appendChild(msgDiv);
-        });
-    }
-    
+    session.messages.forEach(msg => {
+        const msgDiv = document.createElement('div');
+        msgDiv.classList.add('message', msg.sender);
+        msgDiv.innerText = msg.text;
+        chatHistory.appendChild(msgDiv);
+    });
+
     updateTemp();
     chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
 function createNewChat() {
-    tempChat.style.display = "block";
-    title.style.display = "block";
-    title.innerText = "What’s on your mind today?";
+    if (tempChat) tempChat.style.display = "block";
+    if (title) {
+        title.style.display = "block";
+        title.innerText = "What’s on your mind today?";
+    }
     document.title = "AI-AGENT";
 
-   const cleanUrl = "/";
-    window.history.pushState({}, "", cleanUrl);
+    window.history.pushState({}, "", "/");
 
     currentSessionId = null;
     active = false; 
     
-    const historyContainer = document.getElementById("chat-history");
-    if (historyContainer) {
-        historyContainer.innerHTML = '';
-    }
+    if (chatHistory) chatHistory.innerHTML = '';
+    
     const inputField = document.querySelector(".search");
-    if (inputField) {
-        inputField.value = "";
-    }  
+    if (inputField) inputField.value = "";
+    
     updateTemp();
     renderSidebar();
 }
+
 function togglePanel() {
     const container = document.querySelector('.container');
-    container.classList.toggle('panel-closed');
+    if (container) container.classList.toggle('panel-closed');
 }
-renderSidebar();
+
 function toggleDropdown(event) {
     event.stopPropagation();
     closeAllItemDropdowns();
     const dropdown = document.getElementById("dropdown-menu");
-    if (dropdown) {
-        dropdown.classList.toggle("show");
-    }
+    if (dropdown) dropdown.classList.toggle("show");
 }
-window.addEventListener('click', function(event) {
-    if (!event.target.matches('.menu-dots-btn')) {
-        const dropdown = document.getElementById("dropdown-menu");
-        if (dropdown && dropdown.classList.contains('show')) {
-            dropdown.classList.remove('show');
-        }
-    }
-});
-function handleDelete() {
+
+async function handleDelete() {
     if (chatHistory.children.length <= 0) return;
     const check = confirm("Are you sure you want to delete this chat?");
-    if(!check){return;}
+    if (!check) return;
+    
     if (!currentSessionId) {
         if (chatHistory) chatHistory.innerHTML = '';
         updateTemp();
         return;
     }
+    
+    await fetch(`/api/sessions/${currentSessionId}`, { method: 'DELETE' });
     sessions = sessions.filter(session => session.id !== currentSessionId);
-    localStorage.setItem("chat_sessions", JSON.stringify(sessions));
     renderSidebar();
     createNewChat();
 }
+
 const searchBox = document.querySelector(".search");
-function handleAutoGrow() {
-    searchBox.style.height = "auto";
-    searchBox.style.height = searchBox.scrollHeight + "px";
+if (searchBox) {
+    searchBox.addEventListener("input", () => {
+        searchBox.style.height = "auto";
+        searchBox.style.height = searchBox.scrollHeight + "px";
+    });
 }
-searchBox.addEventListener("input", handleAutoGrow);
+
 function InitializeChat() {
     const path = window.location.pathname;
-    const pathSegments = path.split("/").filter(Boolean); // e.g., ["session", "session_123"]
+    const pathSegments = path.split("/").filter(Boolean);
     
-    // Check if the current URL matches /session/<id>
     if (pathSegments[0] === "session" && pathSegments[1]) {
         const urlSessionId = pathSegments[1];
         const matchingSession = sessions.find(s => s.id === urlSessionId);
@@ -501,7 +486,8 @@ function InitializeChat() {
         createNewChat();
     }
 }
-window.addEventListener('DOMContentLoaded', ()=>{
+
+window.addEventListener('DOMContentLoaded', async () => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {
         document.body.classList.add('dark-mode');
@@ -510,11 +496,13 @@ window.addEventListener('DOMContentLoaded', ()=>{
         document.body.classList.remove('dark-mode');
         updateThemeUI(false);
     }
+    await fetchSessionsFromDB();
     InitializeChat();
 });
-window.addEventListener('popstate',InitializeChat );
-window.addEventListener('keydown',(event)=>{
-    if (event.ctrlKey && event.altKey && event.key=='n'){
+
+window.addEventListener('popstate', InitializeChat);
+window.addEventListener('keydown', (event) => {
+    if (event.ctrlKey && event.altKey && event.key === 'n') {
         event.preventDefault();
         createNewChat();
     }

@@ -1,4 +1,5 @@
 import os
+import sqlite3
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -6,7 +7,6 @@ from flask import Flask, request, jsonify,send_from_directory
 from flask_cors import CORS
 from functions.call_function import available_functions, call_function
 from prompts import system_prompt
-
 app = Flask(__name__, static_folder='frontend')
 CORS(app)
 
@@ -15,6 +15,119 @@ api_key = os.environ.get("GEMINI_API_KEY")
 if not api_key:
     raise ValueError("API key not found!")
 client = genai.Client(api_key=api_key)
+##
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_NAME = os.path.join(BASE_DIR, "chat.db")
+
+def get_db():
+    conn = sqlite3.connect(DB_NAME)
+    conn.row_factory = sqlite3.Row 
+    return conn
+
+def init_db():
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # 1. Create Sessions Table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS sessions (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    
+    # 2. Create Messages Table
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            session_id TEXT NOT NULL,
+            role TEXT NOT NULL,
+            sender TEXT NOT NULL,
+            text TEXT NOT NULL,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (session_id) REFERENCES sessions (id) ON DELETE CASCADE
+        )
+    ''')
+    
+    conn.commit()
+    conn.close()
+init_db()
+
+@app.route('/api/sessions', methods=['GET'])
+def get_sessions():
+    conn = get_db()
+    cursor = conn.cursor()
+    sessions = cursor.execute("SELECT * FROM sessions ORDER BY created_at DESC").fetchall()
+    
+    result = []
+    for s in sessions:
+        messages = cursor.execute(
+            "SELECT role, sender, text FROM messages WHERE session_id = ? ORDER BY timestamp ASC", 
+            (s['id'],)
+        ).fetchall()
+        
+        result.append({
+            "id": s['id'],
+            "title": s['title'],
+            "messages": [dict(m) for m in messages]
+        })
+        
+    conn.close()
+    return jsonify(result)
+
+@app.route('/api/sessions', methods=['POST'])
+def create_session():
+    data = request.get_json()
+    session_id = data.get('id')
+    title = data.get('title', 'New Chat')
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT OR IGNORE INTO sessions (id, title) VALUES (?, ?)", 
+        (session_id, title)
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success", "id": session_id})
+
+@app.route('/api/sessions/<session_id>/messages', methods=['POST'])
+def save_message(session_id):
+    data = request.get_json()
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO messages (session_id, role, sender, text) VALUES (?, ?, ?, ?)",
+        (session_id, data['role'], data['sender'], data['text'])
+    )
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success"})
+
+@app.route('/api/sessions/<session_id>/rename', methods=['PUT'])
+def rename_session(session_id):
+    data = request.get_json()
+    new_title = data.get('title')
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("UPDATE sessions SET title = ? WHERE id = ?", (new_title, session_id))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success", "title": new_title})
+
+@app.route('/api/sessions/<session_id>', methods=['DELETE'])
+def delete_session(session_id):
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM messages WHERE session_id = ?", (session_id,))
+    cursor.execute("DELETE FROM sessions WHERE id = ?", (session_id,))
+    conn.commit()
+    conn.close()
+    return jsonify({"status": "success"})
+##
 def generate_session_title(messages):
     if not messages:
         return "New Chat"

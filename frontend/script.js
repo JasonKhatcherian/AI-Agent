@@ -105,7 +105,7 @@ function renderSidebar() {
         renameInput.value = session.title;
         
         renameInput.onkeydown = async (e) => {
-            if (e.key === 'Enter') {
+            if (e.key === 'Enter' && !e.shiftKey) {
                 await saveInlineRename(session.id, renameInput.value);
                 updateTemp();
             }
@@ -483,6 +483,19 @@ if (searchBox) {
             sendBtn.classList.add("hidden");
         }
     });
+    searchBox.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+            if (event.shiftKey) {
+                return;
+            } else {
+                    // Enter alone: Block newline and trigger send
+                event.preventDefault();
+                if (searchBox.value.trim() !== "") {
+                    saveData(event);
+                }
+                }
+            }
+        });
 }
 function InitializeChat() {
     const path = window.location.pathname;
@@ -521,6 +534,9 @@ window.addEventListener('keydown', (event) => {
     if (event.ctrlKey && event.altKey && event.key === 'n') {
         event.preventDefault();
         createNewChat();
+    }
+    if(event.shiftKey && event.key==='Enter'){
+        return;
     }
 });
 // Add to the bottom of script.js
@@ -622,7 +638,7 @@ async function handleAudioSubmission(blob) {
         if (!response.ok) throw new Error("Audio route error");
         const data = await response.json();
         if (data.transcription) {
-            const formattedtext=`Audio: ${data.transcription}`;
+            const formattedtext=`🔊: ${data.transcription}`;
             newMessage.innerText =formattedtext ;
             if (currentSession) {
                 const userMsg = { role: 'user', sender: 'user-message', text:formattedtext};

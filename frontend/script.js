@@ -338,6 +338,10 @@ async function saveData(event) {
 
     userInput.value = "";
     userInput.style.height = "auto";
+    if (micBtn && sendBtn) {
+    micBtn.classList.remove("hidden");
+    sendBtn.classList.add("hidden");
+}
     chatHistory.scrollTop = chatHistory.scrollHeight;
 
     const aiMessage = document.createElement('div');
@@ -461,13 +465,25 @@ async function handleDelete() {
 }
 
 const searchBox = document.querySelector(".search");
+const micBtn = document.getElementById("mic-btn");
+const sendBtn = document.getElementById("send-btn");
+
 if (searchBox) {
     searchBox.addEventListener("input", () => {
+        // Auto-expand textarea height
         searchBox.style.height = "auto";
         searchBox.style.height = searchBox.scrollHeight + "px";
+
+        // Toggle Mic vs Send Button
+        if (searchBox.value.trim().length > 0) {
+            micBtn.classList.add("hidden");
+            sendBtn.classList.remove("hidden");
+        } else {
+            micBtn.classList.remove("hidden");
+            sendBtn.classList.add("hidden");
+        }
     });
 }
-
 function InitializeChat() {
     const path = window.location.pathname;
     const pathSegments = path.split("/").filter(Boolean);
@@ -507,3 +523,136 @@ window.addEventListener('keydown', (event) => {
         createNewChat();
     }
 });
+// Add to the bottom of script.js
+
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const micBtn = document.getElementById('mic-btn');
+    if (!micBtn) return;
+
+    micBtn.addEventListener('click', async () => {
+        if (!isRecording) {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    await handleAudioSubmission(audioBlob);
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                micBtn.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                        <rect x="6" y="6" width="12" height="12" rx="2" />
+                    </svg>
+                `;
+            } catch (err) {
+                console.error("Microphone access error:", err);
+                alert("Could not access microphone.");
+            }
+        } else {
+            mediaRecorder.stop();
+            mediaRecorder.stream.getTracks().forEach(track => track.stop());
+            isRecording = false;
+            micBtn.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="22"></line>
+        </svg>
+        `;
+        }
+    });
+});
+
+async function handleAudioSubmission(blob) {
+    if (title) title.innerText = "";
+
+    // 1. Manage Session creation if new chat
+    if (!currentSessionId && !active) {
+        currentSessionId = "session_" + Date.now();
+        const defaultTitle = "Voice Message";
+
+        await fetch('/api/sessions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: currentSessionId, title: defaultTitle })
+        });
+
+        sessions.unshift({ id: currentSessionId, title: defaultTitle, messages: [] });
+        window.history.pushState({ sessionId: currentSessionId }, "", `/session/${currentSessionId}`);
+        renderSidebar();
+    }
+
+    const currentSession = active ? null : sessions.find(s => s.id === currentSessionId);
+
+    // 2. Add placeholder user message & AI thinking message in UI
+    const newMessage = document.createElement('div');
+    newMessage.innerText = "Audio message sent...";
+    newMessage.classList.add('message', 'user-message');
+    chatHistory.appendChild(newMessage);
+
+    const aiMessage = document.createElement('div');
+    aiMessage.classList.add('message', 'ai-message');
+    aiMessage.innerText = "Listening & Thinking...";
+    chatHistory.appendChild(aiMessage);
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+
+    // 3. Prepare FormData & POST to Flask
+    const formData = new FormData();
+    formData.append('audio', blob, 'audio.webm');
+    formData.append('history', JSON.stringify(currentSession ? currentSession.messages : []));
+
+    try {
+        const response = await fetch('/api/chat-audio', {
+            method: 'POST',
+            body: formData
+        });
+
+        if (!response.ok) throw new Error("Audio route error");
+        const data = await response.json();
+        if (data.transcription) {
+            const formattedtext=`Audio: ${data.transcription}`;
+            newMessage.innerText =formattedtext ;
+            if (currentSession) {
+                const userMsg = { role: 'user', sender: 'user-message', text:formattedtext};
+                currentSession.messages.push(userMsg);
+                await fetch(`/api/sessions/${currentSessionId}/messages`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(userMsg)
+                });
+            }
+            
+        }
+
+        // Render AI Response
+        aiMessage.innerText = data.reply;
+        if (currentSession) {
+            const aiMsg = { role: 'model', sender: 'ai-message', text: data.reply };
+            currentSession.messages.push(aiMsg);
+            await fetch(`/api/sessions/${currentSessionId}/messages`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(aiMsg)
+            });
+            if (currentSession.messages.length === 2) {
+                startInAIRename(currentSession.id, null);
+            }
+        }
+    } catch (err) {
+        console.error(err);
+        aiMessage.innerText = "Error processing audio.";
+    }
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+}

@@ -68,10 +68,21 @@
             <div id="chat-history" class="chat-history"></div>
             <div class="input-container">
                 <textarea class="search" placeholder="Ask Anything" onkeydown="if(event.key === 'Enter') { event.preventDefault(); saveData(event); }"></textarea>
-                <button class="sender" type="button" onclick="saveData(event)"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
-        <line x1="12" y1="19" x2="12" y2="5"></line>
-        <polyline points="5 12 12 5 19 12"></polyline>
-    </svg></button>
+                <button class="sender" type="button" id="mic-btn" aria-label="Record Audio">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="22"></line>
+        </svg>
+    </button>
+
+    <!-- Send button (Hidden by default, shown when user types) -->
+    <button class="sender hidden" type="button" id="send-btn" onclick="saveData(event)" aria-label="Send Message">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>
+    </button>
             </div>
         </div>
     </div>

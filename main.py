@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import json
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
@@ -23,7 +24,6 @@ def get_db():
     conn = sqlite3.connect(DB_NAME)
     conn.row_factory = sqlite3.Row 
     return conn
-
 def init_db():
     conn = get_db()
     cursor = conn.cursor()
@@ -128,6 +128,88 @@ def delete_session(session_id):
     conn.close()
     return jsonify({"status": "success"})
 ##
+@app.route('/api/chat-audio', methods=['POST'])
+def chat_audio():
+    if 'audio' not in request.files:
+        return jsonify({"reply": "Error: No audio file uploaded."}), 400
+
+    audio_file = request.files['audio']
+    raw_history = request.form.get('history', '[]')
+    frontend_history = json.loads(raw_history)
+
+    try:
+        audio_bytes = audio_file.read()
+        mime_type = audio_file.content_type or 'audio/webm'
+
+        # STEP 1: Transcribe the audio first using Gemini
+        transcription_response = client.models.generate_content(
+            model="gemini-3.5-flash",
+            contents=[
+                types.Part.from_bytes(data=audio_bytes, mime_type=mime_type),
+                "Transcribe the audio exactly as spoken. Output ONLY the raw transcript text with no extra commentary."
+            ]
+        )
+        
+        user_transcript = transcription_response.text.strip() if transcription_response.text else ""
+
+        if not user_transcript:
+            return jsonify({
+                "transcription": "Could not understand audio",
+                "reply": "I couldn't hear or understand any speech in that recording. Could you try speaking again?"
+            })
+
+        # STEP 2: Reconstruct message history with the transcribed text
+        messages = []
+        for msg in frontend_history:
+            messages.append(
+                types.Content(
+                    role=msg.get('role'),
+                    parts=[types.Part(text=f"{msg.get('text')}")]
+                )
+            )
+
+        messages.append(types.Content(role="user", parts=[types.Part(text=user_transcript)]))
+
+        # STEP 3: Run your standard tool-calling loop with the transcribed prompt
+        final_text = ""
+        for _ in range(20):
+            response = client.models.generate_content(
+                model="gemini-3.5-flash",
+                contents=messages,
+                config=types.GenerateContentConfig(
+                    tools=[available_functions],
+                    system_instruction=system_prompt,
+                    thinking_config=types.ThinkingConfig(thinking_budget=0),
+                ),
+            )
+
+            if response.candidates:
+                for c in response.candidates:
+                    if c.content:
+                        messages.append(c.content)
+
+            if response.function_calls:
+                tool_parts = []
+                for function_call in response.function_calls:
+                    result = call_function(function_call, verbose=False)
+                    if not result.parts or not result.parts[0].function_response:
+                        raise Exception("Invalid tool response")
+                    tool_parts.append(result.parts[0])
+                
+                messages.append(types.Content(role="user", parts=tool_parts))
+                continue
+
+            final_text = response.text
+            break
+
+        return jsonify({
+            "transcription": user_transcript,
+            "reply": final_text or "Sorry, I couldn't process a response."
+        })
+
+    except Exception as e:
+        print(f"Audio processing error: {e}")
+        return jsonify({"reply": f"Error processing audio: {str(e)}"}), 500
 def generate_session_title(messages):
     if not messages:
         return "New Chat"

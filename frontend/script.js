@@ -540,57 +540,109 @@ window.addEventListener('keydown', (event) => {
     }
 });
 // Add to the bottom of script.js
-
 let mediaRecorder;
 let audioChunks = [];
 let isRecording = false;
+let isCancelling = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     const micBtn = document.getElementById('mic-btn');
-    if (!micBtn) return;
+    const sendBtn = document.getElementById('send-btn');
+    if (!micBtn || !sendBtn) return;
 
+    const micSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+            <line x1="12" y1="19" x2="12" y2="22"></line>
+        </svg>`;
+
+    const cancelSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>`;
+
+    const stopSquareSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>`;
+    const sendArrowSvg = `
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="16" height="16">
+            <line x1="12" y1="19" x2="12" y2="5"></line>
+            <polyline points="5 12 12 5 19 12"></polyline>
+        </svg>`;
+    // 1. MIC BUTTON (Start OR Cancel)
     micBtn.addEventListener('click', async () => {
         if (!isRecording) {
+            // Start recording
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 mediaRecorder = new MediaRecorder(stream);
                 audioChunks = [];
+                isCancelling = false;
 
                 mediaRecorder.ondataavailable = (event) => {
                     if (event.data.size > 0) audioChunks.push(event.data);
                 };
 
                 mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    await handleAudioSubmission(audioBlob);
+                    stream.getTracks().forEach(track => track.stop());
+
+                    if (!isCancelling && audioChunks.length > 0) {
+                        const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                        await handleAudioSubmission(audioBlob);
+                    }
+                    resetRecordingUI();
                 };
 
                 mediaRecorder.start();
                 isRecording = true;
-                micBtn.innerHTML = `
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-                        <rect x="6" y="6" width="12" height="12" rx="2" />
-                    </svg>
-                `;
+
+                // Transform Mic -> Cancel (X)
+                micBtn.innerHTML = cancelSvg;
+                
+                // Show Send Button as the Square Stop Button
+                sendBtn.innerHTML = stopSquareSvg;
+                sendBtn.classList.remove('hidden');
+
             } catch (err) {
                 console.error("Microphone access error:", err);
                 alert("Could not access microphone.");
             }
         } else {
-            mediaRecorder.stop();
-            mediaRecorder.stream.getTracks().forEach(track => track.stop());
-            isRecording = false;
-            micBtn.innerHTML = `
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3z"></path>
-            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
-            <line x1="12" y1="19" x2="12" y2="22"></line>
-        </svg>
-        `;
+            // CANCEL RECORDING
+            isCancelling = true;
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
         }
     });
-});
 
+    // 2. SEND / STOP BUTTON (Submits recorded audio)
+    sendBtn.addEventListener('click', (e) => {
+        if (isRecording) {
+            e.preventDefault();
+            e.stopPropagation();
+            isCancelling = false;
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+        }
+    });
+
+    function resetRecordingUI() {
+        isRecording = false;
+        isCancelling = false;
+        micBtn.innerHTML = micSvg;
+        sendBtn.innerHTML = sendArrowSvg;
+        const searchBox = document.querySelector(".search");
+        if (!searchBox || searchBox.value.trim().length === 0) {
+            sendBtn.classList.add('hidden');
+        }
+    }
+});
 async function handleAudioSubmission(blob) {
     if (title) title.innerText = "";
 

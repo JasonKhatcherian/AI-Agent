@@ -2,9 +2,15 @@ from functions.get_files_info import get_files_info
 from functions.get_file_content import get_file_content
 from functions.run_python_file import run_python_file
 from functions.write_file import write_file
-
+from functions.odoo_integration import (
+    fetch_odoo_data,
+    create_odoo_record,
+    update_odoo_record,
+    delete_odoo_record
+)
 from google.genai import types
 from collections.abc import Callable
+
 # 1. Schema for get_files_info function
 schema_get_files_info = types.FunctionDeclaration(
     name="get_files_info",
@@ -76,21 +82,90 @@ schema_write_file = types.FunctionDeclaration(
         required=["file_path", "content"],
     ),
 )
+#schema for odoo
+schema_fetch_odoo_data = types.FunctionDeclaration(
+    name="fetch_odoo_data",
+    description="Fetches records from Odoo database models like res.partner, project.project, or crm.lead",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "model_name": types.Schema(
+                type=types.Type.STRING,
+                description="The Odoo model to query (e.g., 'res.partner', 'project.project').",
+            ),
+            "limit": types.Schema(
+                type=types.Type.INTEGER,
+                description="Max number of items to retrieve (default: 5).",
+            )
+        },
+        required=["model_name"],
+    ),
+)
 
-# Master list grouping all declarations
+schema_create_odoo_record = types.FunctionDeclaration(
+    name="create_odoo_record",
+    description="Creates a new record in Odoo (e.g., model 'project.project' with values {'name': 'New Project'})",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "model_name": types.Schema(type=types.Type.STRING, description="e.g. 'project.project'"),
+            "values": types.Schema(type=types.Type.OBJECT, description="Dictionary of field values to set"),
+        },
+        required=["model_name", "values"],
+    ),
+)
+
+schema_update_odoo_record = types.FunctionDeclaration(
+    name="update_odoo_record",
+    description="Updates an existing Odoo record by ID.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "model_name": types.Schema(type=types.Type.STRING, description="e.g. 'project.project'"),
+            "record_id": types.Schema(type=types.Type.INTEGER, description="The ID of the record"),
+            "values": types.Schema(type=types.Type.OBJECT, description="Dictionary of fields to update"),
+        },
+        required=["model_name", "record_id", "values"],
+    ),
+)
+
+schema_delete_odoo_record = types.FunctionDeclaration(
+    name="delete_odoo_record",
+    description="Deletes a record in Odoo by ID.",
+    parameters=types.Schema(
+        type=types.Type.OBJECT,
+        properties={
+            "model_name": types.Schema(type=types.Type.STRING, description="e.g. 'project.project'"),
+            "record_id": types.Schema(type=types.Type.INTEGER, description="The ID of the record to delete"),
+        },
+        required=["model_name", "record_id"],
+    ),
+)
+
+# 3. Master List Grouping All Declarations
 available_functions = types.Tool(
     function_declarations=[
         schema_get_files_info,
         schema_get_file_content,
         schema_run_python_file,
         schema_write_file,
+        schema_fetch_odoo_data,
+        schema_create_odoo_record,
+        schema_update_odoo_record,
+        schema_delete_odoo_record,
     ]
 )
+
+# 4. Function Execution Mapping
 function_map: dict[str, Callable[..., str]] = {
     "get_files_info": get_files_info,
     "get_file_content": get_file_content,
     "run_python_file": run_python_file,
     "write_file": write_file,
+    "fetch_odoo_data": fetch_odoo_data,
+    "create_odoo_record": create_odoo_record,
+    "update_odoo_record": update_odoo_record,
+    "delete_odoo_record": delete_odoo_record,
 }
 def call_function(function_call: types.FunctionCall, verbose: bool = False) -> types.Content:
     function_name = function_call.name or ""

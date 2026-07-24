@@ -316,8 +316,8 @@ async function saveData(event) {
 
     const currentSession = active ? null : sessions.find(s => s.id === currentSessionId); 
     const newMessage = document.createElement('div');
-    newMessage.innerText = storedValue;
     newMessage.classList.add('message', 'user-message');
+    newMessage.innerHTML = (typeof marked !== 'undefined' && marked.parse) ? marked.parse(storedValue) : storedValue;
     chatHistory.appendChild(newMessage);
 
     updateTemp();
@@ -363,7 +363,7 @@ async function saveData(event) {
         if (!response.ok) throw new Error('Network response was not ok');
 
         const data = await response.json();
-        aiMessage.innerText = data.reply;
+        aiMessage.innerHTML = marked.parse(data.reply);
 
         if (currentSession) {
             const aiMsg = { role: 'model', sender: 'ai-message', text: data.reply };
@@ -405,7 +405,13 @@ function loadSession(id) {
     session.messages.forEach(msg => {
         const msgDiv = document.createElement('div');
         msgDiv.classList.add('message', msg.sender);
-        msgDiv.innerText = msg.text;
+    
+        if (typeof marked !== 'undefined' && marked.parse) {
+            msgDiv.innerHTML = marked.parse(msg.text);
+        } else {
+            msgDiv.innerText = msg.text;
+        }
+
         chatHistory.appendChild(msgDiv);
     });
 
@@ -705,7 +711,7 @@ async function handleAudioSubmission(blob) {
         }
 
         // Render AI Response
-        aiMessage.innerText = data.reply;
+        aiMessage.innerHTML = marked.parse(data.reply);
         if (currentSession) {
             const aiMsg = { role: 'model', sender: 'ai-message', text: data.reply };
             currentSession.messages.push(aiMsg);
